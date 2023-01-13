@@ -14,7 +14,7 @@ export type PaintOptions = {
   color?: string,
   style?: keyof PaintStyleEnumValues,
   antiAlias?: boolean,
-  blendMode: keyof BlendModeEnumValues,
+  blendMode?: keyof BlendModeEnumValues,
   shader?: Shader,
   strokeCap?: keyof StrokeCapEnumValues,
   strokeJoin?: keyof StrokeJoinEnumValues,

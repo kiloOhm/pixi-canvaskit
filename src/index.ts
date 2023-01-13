@@ -1,7 +1,13 @@
 import CanvasKitInit, { CanvasKit } from "canvaskit-wasm";
+import { CKTexture } from "./CKTexture";
+import { CKPaint } from "./CKPaint";
+import { CKParagraphBuilder } from "./CKParagraphBuilder";
 export * from './CKParagraphBuilder';
 export * from './CKParagraph';
 export * from './types';
+export * from './CKPaint';
+export * from './CKTexture';
+export * from './CKPath';
 
 /**
  * Handles initializing CanvasKit WASM and manages its instance.
@@ -21,7 +27,7 @@ export class PixiCanvasKit {
     cache?: boolean,
   }) {
     const { 
-      canvasKitBaseBath = 'https://unpkg.com/canvaskit-wasm@latest/bin/',
+      canvasKitBaseBath = 'https://unpkg.com/canvaskit-wasm@0.37.2/bin/',
       cache = true,
     } = options ?? {};
     PixiCanvasKit.cache = cache;
@@ -30,5 +36,11 @@ export class PixiCanvasKit {
     });
     if(!canvasKit) throw new Error('CanvasKit failed to initialize');
     PixiCanvasKit.canvasKit = canvasKit;
+  }
+
+  public clearCache() {
+    CKTexture.clearCache();
+    CKParagraphBuilder.clearCache();
+    CKPaint.clearCache();
   }
 }

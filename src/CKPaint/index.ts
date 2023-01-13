@@ -8,9 +8,9 @@ import { PixiCanvasKit } from "..";
 export class CKPaint {
   protected static paintCache = new Map<string, Paint>();
   public paint: Paint; 
-  constructor(options: PaintOptions, cache = true) {
+  constructor(options: PaintOptions) {
     let cacheKey: string | undefined;
-    if(cache) {
+    if(PixiCanvasKit.cache) {
       cacheKey = simpleHash(JSON.stringify(options));
       if(CKPaint.paintCache.has(cacheKey)) {
         this.paint = CKPaint.paintCache.get(cacheKey)!;
@@ -60,7 +60,7 @@ export class CKPaint {
     if(options.alpha) {
       paint.setAlphaf(options.alpha);
     }
-    if(cache && cacheKey) {
+    if(PixiCanvasKit.cache && cacheKey) {
       CKPaint.paintCache.set(cacheKey, paint);
     }
     this.paint = paint; 

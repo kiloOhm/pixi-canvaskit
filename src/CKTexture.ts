@@ -12,12 +12,12 @@ export abstract class CKTexture {
   public static clearCache() {
     CKTexture.textureCache.clear();
   }
-
+  width?: number;
+  height?: number;
   constructor(
-    private readonly width: number,
-    private readonly height: number,
     private readonly renderFunction: (canvas: Canvas) => void,
     private readonly cacheKeyFunction?: () => string,
+    private readonly beforeRender?: () => void,
   ) {}
 
   /**
@@ -26,15 +26,18 @@ export abstract class CKTexture {
    * @throws Error if canvas couldn't be created.
    */
   public getTexture(options?: {
-    backgroundColor?: string, 
     multisample?: number,
     resolution?: number,
   }): Texture {
+    this.beforeRender?.();
+    if(!this.width || !this.height) {
+      throw new Error('Width and height must be set before calling getTexture');
+    }
     const {
-      backgroundColor = 'transparent',
       multisample = 1,
       resolution = 1,
     } = options ?? {};
+    console.time('createSurface')
     let cacheKey: string | undefined;
     if(PixiCanvasKit.cache && this.cacheKeyFunction) {
       cacheKey = this.cacheKeyFunction();
@@ -63,12 +66,12 @@ export abstract class CKTexture {
     }
     const canvas = surface.getCanvas();
     if(!canvas) throw new Error('Failed to create canvas');
-    const bgColor = parseColorAsCKColor(backgroundColor);
-    if(bgColor) {
-      canvas.clear(bgColor);
-      canvas.scale(multisample ?? 1, multisample ?? 1);
-    }
+    canvas.scale(multisample ?? 1, multisample ?? 1);
+    console.timeEnd('createSurface')
+    console.time('renderFunction')
     this.renderFunction(canvas);
+    console.timeEnd('renderFunction')
+    console.time('flush')
     const texture = Texture.fromBuffer(
       new Uint8Array(imageData.toTypedArray()), 
       imageInfo.width, 
@@ -80,6 +83,8 @@ export abstract class CKTexture {
     if(PixiCanvasKit.cache && cacheKey) {
       CKTexture.textureCache.set(cacheKey, texture);
     }
+    surface.delete();
+    console.timeEnd('flush')
     return texture;
   }
 }

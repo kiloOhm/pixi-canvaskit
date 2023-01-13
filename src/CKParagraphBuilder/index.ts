@@ -18,7 +18,7 @@ import { CKParagraph } from "../CKParagraph";
 import { simpleHash } from "../../util/hash";
 
 export class CKParagraphBuilder {
-  private paragraphCache = new Map<string, CKParagraph>();
+  private static paragraphCache = new Map<string, CKParagraph>();
   private fontMgr: FontMgr;
   private builder: ParagraphBuilder;
   private defaultTextStyle?: CKTextStyle;
@@ -44,9 +44,20 @@ export class CKParagraphBuilder {
     );
     this.fgPaint = new PixiCanvasKit.canvasKit.Paint();
     this.fgPaint.setAntiAlias(true);
+    this.fgPaint.setShader(PixiCanvasKit.canvasKit.Shader.MakeRadialGradient(
+      [100, 100],
+      200,
+      [parseColorAsCKColor('black')!, parseColorAsCKColor('white')!],
+      null,
+      PixiCanvasKit.canvasKit.TileMode.Clamp
+    ))
     this.bgPaint = new PixiCanvasKit.canvasKit.Paint();
     this.bgPaint.setAntiAlias(true);
     this.bgPaint.setAlphaf(0);
+  }
+
+  public static clearCache() {
+    CKParagraphBuilder.paragraphCache.clear();
   }
   
   /**
@@ -66,8 +77,8 @@ export class CKParagraphBuilder {
     let cacheKey: string | undefined;
     if(PixiCanvasKit.cache) {
       cacheKey = simpleHash(JSON.stringify(options));
-      if(this.paragraphCache.has(cacheKey)) {
-        return this.paragraphCache.get(cacheKey)!;
+      if(CKParagraphBuilder.paragraphCache.has(cacheKey)) {
+        return CKParagraphBuilder.paragraphCache.get(cacheKey)!;
       }
     }
     this.builder.reset();
@@ -96,7 +107,7 @@ export class CKParagraphBuilder {
     }
     const ckParagraph = new CKParagraph(paragraph);
     if(PixiCanvasKit.cache && cacheKey) { 
-      this.paragraphCache.set(cacheKey, ckParagraph);
+      CKParagraphBuilder.paragraphCache.set(cacheKey, ckParagraph);
     }
     return ckParagraph;
   }

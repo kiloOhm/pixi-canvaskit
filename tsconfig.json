@@ -1,24 +1,14 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
   "exclude": ["dist", "node_modules"],
-  "display": "Default",
+  "include": ["src"],
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "ESNext",
     "outDir": "dist",
-    "target": "esnext",
-    "resolveJsonModule": true,
-    "composite": false,
-    "declaration": true,
-    "declarationMap": true,
+    "target": "ES2015",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "inlineSources": false,
-    "isolatedModules": true,
-    "moduleResolution": "node",
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "preserveWatchOutput": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "declaration": true,
+    "moduleResolution": "Node",
   }
 }
