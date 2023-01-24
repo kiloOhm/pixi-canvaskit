@@ -4,16 +4,21 @@ import { CKPaint } from "../CKPaint";
 import { PaintOptions } from "../CKPaint/types";
 import { CKTexture } from "../CKTexture";
 import { indexIfDefined } from "../../util/general";
+import { simpleHash } from "../../util/hash";
 
 type Point = {
   x: number;
   y: number;
 };
 
+/**
+ * This is a wrapper around the CanvasKit Path class
+ * @deprecated very slow, use PIXI.Graphics instead
+ */
 export class CKPath extends CKTexture{
   public path: Path; 
-  public fillPaint?: PaintOptions;
-  public strokePaint?: PaintOptions;
+  public fillPaint?: CKPaint;
+  public strokePaint?: CKPaint;
   public offset?: {
     left: number,
     top: number,
@@ -40,33 +45,36 @@ export class CKPath extends CKTexture{
       stroke,
       fill,
     } = options;
-    super(
-      (canvas: Canvas) => {
-        canvas.translate(this.offset?.left ?? 0, this.offset?.top ?? 0);
-        if(this.fillPaint) {
-          canvas.drawPath(this.path, new CKPaint({
-            ...this.fillPaint,
-            style: 'Fill'
-          }).paint);
-        }
-        if(this.strokePaint) {
-          const { strokeWidth = 1, ...strokePaint } = this.strokePaint;
-          canvas.drawPath(this.path, new CKPaint({
-            ...strokePaint,
-            style: 'Stroke',
-            strokeWidth: strokeWidth
-          }).paint);
-        }
-      },
-      undefined,
-      () => {
+    super({
+      beforeRender: () => {
         console.time('calculateBounds')
         this.calculateBounds();
         console.timeEnd('calculateBounds')
-      }
-    );
-    this.strokePaint = stroke;
-    this.fillPaint = fill;
+      },
+      renderFunction: (canvas: Canvas) => {
+        canvas.translate(this.offset?.left ?? 0, this.offset?.top ?? 0);
+        if(this.fillPaint) {
+          canvas.drawPath(this.path, this.fillPaint.paint);
+        }
+        if(this.strokePaint) {
+          canvas.drawPath(this.path, this.strokePaint.paint);
+        }
+      },
+      cacheKeyFunction: () => {
+        return simpleHash(JSON.stringify([
+          this.strokePaint,
+          this.fillPaint,
+        ]))
+      },
+    });
+    this.strokePaint = new CKPaint({
+      ...stroke,
+      style: 'Stroke',
+    });
+    this.fillPaint = new CKPaint({
+      ...fill,
+      style: 'Fill',
+    });
     this.path = new PixiCanvasKit.canvasKit.Path();
     if(fill?.algorithm) {
       this.path.setFillType(indexIfDefined(PixiCanvasKit.canvasKit.FillType, fill?.algorithm ?? 'Winding')!);
@@ -115,13 +123,15 @@ export class CKPath extends CKTexture{
    * This is horrible, will refactor later
    */
   private calculateBounds() {
-    const strokeWidth = this.strokePaint?.strokeWidth ? this.strokePaint?.strokeWidth / 2 : 0;
+    const strokeWidth = this.strokePaint?.paint.getStrokeWidth() 
+      ? this.strokePaint?.paint.getStrokeWidth() / 2 
+      : 0;
     const boundsWithCurves = this.path.computeTightBounds();
     let furthestLeft = boundsWithCurves[0] - strokeWidth;
     let furthestRight = boundsWithCurves[2] + strokeWidth;
     let furthestTop = boundsWithCurves[1] - strokeWidth;
     let furthestBottom = boundsWithCurves[3] + strokeWidth;
-    console.log(this.edgePoints);
+    // console.log(this.edgePoints);
     for(let i = 0; i < this.edgePoints.length; i++) {
       const previous = (i === 0) 
         ? this.edgePoints[this.edgePoints.length - 1]
@@ -155,7 +165,7 @@ export class CKPath extends CKTexture{
   ) {
     let angleBetween = this.calculateAngle(p1, p2, p3);
     if(angleBetween === Math.PI || angleBetween === 0) {
-      console.warn('Parallel lines, no mitre');
+      // console.warn('Parallel lines, no mitre');
       return [p2.x, p2.y];
     }
     const correctedP1 = {
@@ -179,23 +189,18 @@ export class CKPath extends CKTexture{
       angleP2P3toXAxis = (2 * Math.PI) - angleP2P3toXAxis;;
     }
     const angleMiterToXAxis = ((Math.min(angleP1P2toXAxis, angleP2P3toXAxis) + Math.abs(angleP1P2toXAxis - angleP2P3toXAxis) / 2) + Math.PI) % (2 * Math.PI);
+    const strokeWidth = this.strokePaint?.paint.getStrokeWidth() ?? 0;
     let miterLength = this.calculateMiterLength(
       angleBetween,
-      (this.strokePaint?.strokeWidth ?? 0)
+      strokeWidth,
     );
-    const strokeLength = this.strokePaint?.strokeWidth ? this.strokePaint.strokeWidth / 2 : 1;
-    const miterLimit = strokeLength * (this.strokePaint?.strokeMiter ?? 1);
+    const strokeLength = strokeWidth ? strokeWidth / 2 : 1;
+    const miterLimit = strokeLength * (this.strokePaint?.paint.getStrokeMiter() ?? 1);
     miterLength = Math.min(miterLength, miterLimit);
     const outerPoint = {
       x: p2.x + miterLength * Math.cos((Math.PI * 2) - angleMiterToXAxis),
       y: p2.y - miterLength * Math.sin((Math.PI * 2) - angleMiterToXAxis),
     }
-    console.log({
-      p2,
-      angleBetween,
-      miterLength, 
-      outerPoint
-    });
     return [outerPoint.x, outerPoint.y];
   }
 

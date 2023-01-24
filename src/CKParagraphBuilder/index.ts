@@ -5,7 +5,7 @@ import {
   TextStyle as CKTextStyle,
   Paint,
 } from "canvaskit-wasm";
-import { PixiCanvasKit } from "..";
+import { CKPaint, PixiCanvasKit } from "..";
 import { 
   TextSegment, 
   ParagraphStyle,
@@ -16,6 +16,7 @@ import { parseColorAsCKColor } from "../../util/color";
 import { indexIfDefined } from "../../util/general";
 import { CKParagraph } from "../CKParagraph";
 import { simpleHash } from "../../util/hash";
+import { PaintOptions } from "../CKPaint/types";
 
 export class CKParagraphBuilder {
   private static paragraphCache = new Map<string, CKParagraph>();
@@ -29,7 +30,23 @@ export class CKParagraphBuilder {
    * @param paragraphStyle ParagraphStyle to use for the ParagraphBuilder, can include default text style.
    * @throws Error if PixiCanvasKit is not initialized.
    */
-  constructor(fontData: ArrayBuffer[], paragraphStyle: ParagraphStyle) {
+  constructor(options: {
+    fontData: ArrayBuffer[], 
+    paragraphStyle: ParagraphStyle,
+    foregroundPaint?: PaintOptions,
+    backgroundPaint?: PaintOptions,
+  }) {
+    const { 
+      fontData, 
+      paragraphStyle, 
+      foregroundPaint = {
+        antiAlias: true,
+      }, 
+      backgroundPaint = {
+        antiAlias: true,
+        alpha: 0,
+      }
+    } = options;
     if(!PixiCanvasKit.canvasKit) throw new Error('CanvasKit not initialized');
     const fontMgr = PixiCanvasKit.canvasKit.FontMgr.FromData(...fontData);
     if(!fontMgr) throw new Error('Failed to load font');
@@ -42,18 +59,8 @@ export class CKParagraphBuilder {
       ckParagraphStyle,
       this.fontMgr
     );
-    this.fgPaint = new PixiCanvasKit.canvasKit.Paint();
-    this.fgPaint.setAntiAlias(true);
-    this.fgPaint.setShader(PixiCanvasKit.canvasKit.Shader.MakeRadialGradient(
-      [100, 100],
-      200,
-      [parseColorAsCKColor('black')!, parseColorAsCKColor('white')!],
-      null,
-      PixiCanvasKit.canvasKit.TileMode.Clamp
-    ))
-    this.bgPaint = new PixiCanvasKit.canvasKit.Paint();
-    this.bgPaint.setAntiAlias(true);
-    this.bgPaint.setAlphaf(0);
+    this.fgPaint = new CKPaint(foregroundPaint).paint;
+    this.bgPaint = new CKPaint(backgroundPaint).paint;
   }
 
   public static clearCache() {

@@ -2,12 +2,14 @@ import CanvasKitInit, { CanvasKit } from "canvaskit-wasm";
 import { CKTexture } from "./CKTexture";
 import { CKPaint } from "./CKPaint";
 import { CKParagraphBuilder } from "./CKParagraphBuilder";
+import { CKGradient } from "./CKGradient";
 export * from './CKParagraphBuilder';
 export * from './CKParagraph';
 export * from './types';
 export * from './CKPaint';
 export * from './CKTexture';
 export * from './CKPath';
+export * from './CKGradient';
 
 /**
  * Handles initializing CanvasKit WASM and manages its instance.
@@ -38,9 +40,10 @@ export class PixiCanvasKit {
     PixiCanvasKit.canvasKit = canvasKit;
   }
 
-  public clearCache() {
+  public static clearCache() {
     CKTexture.clearCache();
     CKParagraphBuilder.clearCache();
     CKPaint.clearCache();
+    CKGradient.clearCache();
   }
 }

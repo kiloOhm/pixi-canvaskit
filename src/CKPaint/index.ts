@@ -39,10 +39,10 @@ export class CKPaint {
     if(options.strokeJoin) {
       paint.setStrokeJoin(indexIfDefined(PixiCanvasKit.canvasKit.StrokeJoin, options.strokeJoin)!);
     }
-    if(options.strokeMiter) {
+    if(options.strokeMiter != undefined) {
       paint.setStrokeMiter(options.strokeMiter);
     }
-    if(options.strokeWidth) {
+    if(options.strokeWidth != undefined) {
       paint.setStrokeWidth(options.strokeWidth);
     }
     if(options.maskFilter) {
@@ -57,7 +57,7 @@ export class CKPaint {
     if(options.colorFilter) {
       paint.setColorFilter(options.colorFilter);
     }
-    if(options.alpha) {
+    if(options.alpha != undefined) {
       paint.setAlphaf(options.alpha);
     }
     if(PixiCanvasKit.cache && cacheKey) {
